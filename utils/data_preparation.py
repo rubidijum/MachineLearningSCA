@@ -18,6 +18,9 @@ class SCAML_Dataset():
 
         return shard_array
 
+    #TODO: split into two functions:
+    #   - create dataset once (or rarely)
+    #   - get training/attack subset of data (slice number of traces, attack bytes, trace length...)
     def create_data(self, shard_array, attack_point, attack_byte, trace_length=DEFAULT_TRACE_LENGTH, attack=False):
         """! Extract data from the shards based on attack point and attack byte
             
@@ -33,13 +36,13 @@ class SCAML_Dataset():
         X = []
         y = []
         
-        keys = []
-        plaintexts = []
+        keys_list = []
+        plaintexts_list = []
         
         for shard in tqdm.tqdm(shard_array, desc='Loading shards', position=0, leave=True):
             if attack:
-                keys.append(tf.convert_to_tensor(shard['keys'][attack_byte,:]))
-                plaintexts.append(tf.convert_to_tensor(shard['pts'][attack_byte,:]))
+                keys_list.append(tf.convert_to_tensor(shard['keys'][attack_byte,:]))
+                plaintexts_list.append(tf.convert_to_tensor(shard['pts'][attack_byte,:]))
                 
             X.append(tf.convert_to_tensor(shard['traces'][:,:trace_length,:], dtype='float32'))
             
@@ -50,22 +53,20 @@ class SCAML_Dataset():
             
         X = tf.concat(X, axis=0)
         y = tf.concat(y, axis=0)
-
-        indices = tf.range(start=0, limit=tf.shape(X)[0], dtype=tf.int32)
-        shuffled_indices = tf.random.shuffle(indices)
-
-        X = tf.gather(X, shuffled_indices)
-        y = tf.gather(y, shuffled_indices)
-            
+ 
         if attack:
-            keys = tf.concat(keys, axis=0)
-            plaintexts = tf.concat(plaintexts, axis=0)
-            
-            keys = tf.gather(keys, shuffled_indices)
-            plaintexts = tf.gather(plaintexts, shuffled_indices)
-            
-            return (X, y, keys, plaintexts)
+            keys_list = tf.concat(keys_list, axis=0)
+            plaintexts_list = tf.concat(plaintexts_list, axis=0)
+                        
+            return (X, y, keys_list, plaintexts_list)
         else:
+            # Shuffle during training only => helps convergence
+            indices = tf.range(start=0, limit=tf.shape(X)[0], dtype=tf.int32)
+            shuffled_indices = tf.random.shuffle(indices)
+
+            X = tf.gather(X, shuffled_indices)
+            y = tf.gather(y, shuffled_indices)
+
             return (X, y)
 
 class ASCAD_Dataset():
