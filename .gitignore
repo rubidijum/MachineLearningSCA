@@ -1,0 +1,7 @@
+*.zip
+*.npz
+
+# Ignore all outputs
+/logs/
+/models/
+/data/
