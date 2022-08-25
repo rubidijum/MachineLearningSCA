@@ -52,11 +52,26 @@ class AES():
     sbox_input = input_byte ^ key_byte
     return self.AES_SBOX[sbox_input]
 
-  def reverse_aes(self, sbox_out, plain_byte):
+  def reverse_SBOX(self, sbox_out):
     """! Perform reverse AES SBOX operation
     @param sbox_out Output of the SBOX
-    @param plain_byte Plain text byte
     @return Input of the SBOX based on the outputs
     """
-    key_byte = self.AES_SBOX_INVERSE[sbox_out] ^ plain_byte
-    return key_byte
+    return self.AES_SBOX_INVERSE[sbox_out]
+
+  def get_key(self, s_box_input, plain_byte):
+    """! Recover key from intermediate SBOX input:
+
+    key --> XOR <-- plain
+             |
+             | <--- s_box_input
+           -----
+           | S |
+           -----
+             | <--- s_box_output
+
+    s_box_input = key XOR plain
+    s_box_input XOR plain = key
+
+    """
+    return s_box_input ^ plain_byte
