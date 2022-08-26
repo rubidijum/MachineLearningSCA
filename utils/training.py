@@ -7,14 +7,20 @@ import seaborn as sn
 from tqdm.auto import tqdm
 from utils.AES import AES
 from utils.data_preparation import SCAML_Dataset
-class SCA_Trainer():
 
+import time
+class SCA_Trainer():
+    #TODO: tie trainer to a single model
     def __init__(self, log_root_path='./logs/', save_root_path='./models/') -> None:
         self.log_root_path = log_root_path
         self.save_root_path = save_root_path
 
         self.y_predicted_list = []
         self.y_true_list = []
+
+        self.key_ranks = []
+
+        self.correct_key_predictions = []
 
     def train_model(self, model, X_train, y_train, batch_size, epochs, validation_split, callbacks_list=None, nn_type='MLP', tag='', save_dir=''):
         """! Train model and log training process to tensorboard
@@ -59,7 +65,7 @@ class SCA_Trainer():
         
         return history
 
-    def evaluate_model(self, model, dataset, attack_byte, traces_per_chunk=256, keys_to_attack=256):
+    def evaluate_model(self, model, dataset, attack_byte, traces_per_chunk=256, keys_to_attack=256, verbose=1):
         """! Evaluate model quality based on SCA relevant metrics.
         This is equivalent to attacking single key byte and displaying the results.
         
@@ -69,81 +75,62 @@ class SCA_Trainer():
         @param keys_per_chunk Number of traces in each attack chunk. All the data in one attack chunk is regarding the same key.
         """
 
+        # reset calculated metrics for each new attack
+        self.key_ranks = []
+        self.y_predicted_list = []
+        self.y_true_list = []
+
         for key_index in tqdm(range(keys_to_attack)):
             attack_dataset = dataset.get_dataset(key_index, attack_byte, num_traces=traces_per_chunk, training=False)
             X_attack, y_attack, keys, plaintexts = attack_dataset.X, attack_dataset.y, attack_dataset.keys, attack_dataset.plaintexts
 
-            print(X_attack.shape)
-
             true_key_byte = keys[0][0]
-            print(f"Attacking key byte: {true_key_byte}")
+            # print(f"True key byte: {true_key_byte}")
 
-            predictions = model.predict(X_attack, verbose=1)
+            predictions = model.predict(X_attack, verbose=verbose)
 
-            # Intermediate value classes
-            # predicted_y_categorical = np.argmax(predictions, axis=1)
+            # Intermediate value classes accuracy
+            predicted_y_categorical = np.argmax(predictions, axis=1)
+            true_y_categorical = np.argmax(y_attack, axis=1)
 
-            # true_y = y_attack
-            # true_y_categorical = np.argmax(true_y, axis=1)
-
-            # self.y_predicted_list.append(predicted_y_categorical)
-            # self.y_true_list.append(true_y_categorical)
-
+            self.y_predicted_list.append(predicted_y_categorical)
+            self.y_true_list.append(true_y_categorical)
             
             key_predicted_probabilities = self.get_key_probabilities(predictions, plaintexts, attack_byte)
 
             # Accumulate key predictions and classify
+            print(f"Attacking key {key_index}")
             probs = np.zeros(256)
+            ranks = []
+            correct_predictions = {}
             for i, p in enumerate(key_predicted_probabilities):
                 probs += p
                 rankings = np.argsort(probs)[::-1]
-                print(f"Key guess {rankings[0]} using {i} traces")
+                true_key_byte_rank = np.where(rankings == true_key_byte)[0][0]
 
+                ranks.append(true_key_byte_rank)
+                # print(f"true_key_byte_rank {true_key_byte_rank}")
+                # self.plot_key_ranks(ranks)
 
-        # for trace_num in tqdm(range(attack_traces)):
-        #     # Predict only on the portion of data tied to one key
-        #     min_ = trace_num*traces_per_chunk
-        #     max_ = min_ + attack_traces # + traces_per_attack -> sa koliko trace-va napadamo ovaj konkretan kljuc
+            self.key_ranks.append(ranks)
+            self.plot_key_ranks(self.key_ranks)
 
-        #     plaintexts_ = plaintexts[min_:max_]
-        #     true_key_byte = keys[min_:max_][trace_num]
+            self.plot_confusion_matrix()
 
-        #     predictions = model.predict(X_attack[min_:max_,:,:], verbose=1)
-        #     # print(predictions.shape)
+        # self.update_success_rate()
+        # num_traces -> (correctPreds_no, % of keys guessed)
+        correct_predictions = {}
+        for num_traces in range(traces_per_chunk):
+            # Correct key predictions for num_traces
+            _ranks_col = np.asarray(self.key_ranks)[:, num_traces]
+            _num_correct = np.sum(_ranks_col == 0, axis=0)
+            correct_predictions[num_traces] = (_num_correct, (_num_correct/keys_to_attack)*100)
 
-        #     key_predicted_probabilities = get_key_probabilities
+        for cp in correct_predictions.keys():
+            print(f"Number of traces: {cp} : guessed {correct_predictions[cp][0]} pct guessed {correct_predictions[cp][1]}%")
 
-        #     print(f"Predicted key {key_predicted} with probability {key_predicted_probabilities[key_predicted]}")
-
-        #     print(f"Predicted probs {key_predicted_probabilities}")
-        #     # Intermediate value classes
-        #     predicted_y_categorical = np.argmax(predictions, axis=1)
-
-        #     true_y = y_attack[min_:max_,:]
-        #     true_y_categorical = np.argmax(true_y, axis=1)
-
-        #     self.y_predicted_list.append(predicted_y_categorical)
-        #     self.y_true_list.append(true_y_categorical)
-
-        #     # Voting
-        #     values = np.zeros((256))
-        #     for i in range(num_traces):
-        #         values = values + key_predicted_probabilities
-        #         print(f"values {values}, shape = {values.shape}")
-        #         print(f"Argmaxed: {np.argmax(values)[::-1]}, correct_key: {true_key_byte}")
-
-        # conf_pred = np.asarray(self.y_predicted_list).flatten()
-        # conf_true = np.asarray(self.y_true_list).flatten()
-
-        # conf_mat = tf.math.confusion_matrix(conf_pred, conf_true)
-        # plt.imshow(conf_mat, interpolation='none', cmap='magma')
-        # plt.colorbar()
-        # plt.title('Confusion matrix')
-        # plt.xlabel('Predicted attack points')
-        # plt.ylabel('True attack points')
-        # plt.grid(True)
-        # plt.show()
-
+    def update_success_rate(self):
+        pass
 
     def get_key_probabilities(self, predictions, plaintexts, attack_byte):
         """! Calculate probabilities for each key guess based on the NN outputs
@@ -172,12 +159,32 @@ class SCA_Trainer():
         conf_pred = np.asarray(self.y_predicted_list).flatten()
         conf_true = np.asarray(self.y_true_list).flatten()
         conf_mat = tf.math.confusion_matrix(conf_pred, conf_true)
+
         plt.imshow(conf_mat, interpolation='none', cmap='magma')
         plt.colorbar()
         plt.title('Confusion matrix')
         plt.xlabel('Predicted attack points')
         plt.ylabel('True attack points')
         plt.grid(True)
+        plt.show()
+
+    def plot_key_ranks(self, ranks, num_traces=None):
+
+        plt.figure(figsize=(10, 20))
+
+        for r in ranks:
+            plt.plot(r)
+
+        x_max = len(ranks[0]) if num_traces is None else num_traces
+        x_labels = [str(x) for x in range(x_max)]
+        plt.xticks(np.arange(x_max), labels=x_labels)
+
+        y_max = np.max(np.asarray(ranks))
+        y_labels = [str(y) for y in range(y_max)]
+        plt.yticks(np.arange(y_max), labels=y_labels, rotation='horizontal')
+
+        plt.ylabel('Key rank')
+        plt.xlabel('Number of traces')
         plt.show()
 
     def evaluation_summary(self):
