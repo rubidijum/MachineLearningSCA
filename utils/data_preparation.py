@@ -98,7 +98,7 @@ class SCAML_Dataset():
         else:
             y = self.attack_dataset.y[attack_byte]
             y = keras.utils.np_utils.to_categorical(y, num_classes=256, dtype='uint8')
-            y = y[:,start_idx:end_idx]
+            y = y[start_idx:end_idx,:]
 
             X = self.attack_dataset.X[start_idx:end_idx,:trace_length,:]
             return self.AttackDataset(X, y, self.attack_dataset.keys[:, start_idx:end_idx], self.attack_dataset.plaintexts[:, start_idx:end_idx])
