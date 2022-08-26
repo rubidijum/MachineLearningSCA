@@ -22,8 +22,12 @@ class SCA_Trainer():
 
         self.correct_key_predictions = []
 
+        self.stats_per_trace = {}
+
     def train_model(self, model, X_train, y_train, batch_size, epochs, validation_split, callbacks_list=None, nn_type='MLP', tag='', save_dir=''):
-        """! Train model and log training process to tensorboard
+        """! Model training wrapper function.
+
+        Train the model, plot training data on Tensorboard and save trained model to specified path.
 
         @param model Model to train
         @param X_train Model inputs
@@ -61,7 +65,8 @@ class SCA_Trainer():
                             validation_split=validation_split,
                             callbacks=callbacks_list)
         
-        model.save(self.save_root_path)
+        save_path = self.save_root_path if save_dir == '' else save_dir
+        model.save(save_path)
         
         return history
 
@@ -79,6 +84,7 @@ class SCA_Trainer():
         self.key_ranks = []
         self.y_predicted_list = []
         self.y_true_list = []
+        self.stats_per_trace = {}
 
         for key_index in tqdm(range(keys_to_attack)):
             attack_dataset = dataset.get_dataset(key_index, attack_byte, num_traces=traces_per_chunk, training=False)
@@ -102,15 +108,12 @@ class SCA_Trainer():
             print(f"Attacking key {key_index}")
             probs = np.zeros(256)
             ranks = []
-            correct_predictions = {}
             for i, p in enumerate(key_predicted_probabilities):
                 probs += p
                 rankings = np.argsort(probs)[::-1]
                 true_key_byte_rank = np.where(rankings == true_key_byte)[0][0]
 
                 ranks.append(true_key_byte_rank)
-                # print(f"true_key_byte_rank {true_key_byte_rank}")
-                # self.plot_key_ranks(ranks)
 
             self.key_ranks.append(ranks)
             self.plot_key_ranks(self.key_ranks)
@@ -119,18 +122,11 @@ class SCA_Trainer():
 
         # self.update_success_rate()
         # num_traces -> (correctPreds_no, % of keys guessed)
-        correct_predictions = {}
         for num_traces in range(traces_per_chunk):
             # Correct key predictions for num_traces
             _ranks_col = np.asarray(self.key_ranks)[:, num_traces]
             _num_correct = np.sum(_ranks_col == 0, axis=0)
-            correct_predictions[num_traces] = (_num_correct, (_num_correct/keys_to_attack)*100)
-
-        for cp in correct_predictions.keys():
-            print(f"Number of traces: {cp} : guessed {correct_predictions[cp][0]} pct guessed {correct_predictions[cp][1]}%")
-
-    def update_success_rate(self):
-        pass
+            self.stats_per_trace[num_traces] = (_num_correct, (_num_correct/keys_to_attack)*100)
 
     def get_key_probabilities(self, predictions, plaintexts, attack_byte):
         """! Calculate probabilities for each key guess based on the NN outputs
@@ -142,7 +138,7 @@ class SCA_Trainer():
         aes = AES()
 
         xs = predictions.shape[0]
-        #                                   num_classes = 256 for key bytes
+        #                                 num_classes = 256 for key bytes
         key_probabilities = np.zeros((xs, 256))
         for i, predictions_test in enumerate(predictions):
             pt_test = plaintexts[attack_byte][i]
@@ -166,7 +162,6 @@ class SCA_Trainer():
         plt.xlabel('Predicted attack points')
         plt.ylabel('True attack points')
         plt.grid(True)
-        plt.show()
 
     def plot_key_ranks(self, ranks, num_traces=None):
 
@@ -185,11 +180,14 @@ class SCA_Trainer():
 
         plt.ylabel('Key rank')
         plt.xlabel('Number of traces')
-        plt.show()
+        plt.draw()
+        plt.pause(0.0001)
+        plt.clf()
 
     def evaluation_summary(self):
         """! Display summary of model quality evaluation
         """
-        pass
+        for cp in self.stats_per_trace.keys():
+            print(f"Number of traces: {cp} : guessed {self.stats_per_trace[cp][0]} pct guessed {self.stats_per_trace[cp][1]}%")
 
         
