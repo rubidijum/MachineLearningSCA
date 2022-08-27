@@ -5,21 +5,29 @@ Machine learning faculty course project. Using machine learning techniques for S
 
 Code is divided between a couple of jupyter notebooks:
 
-`0_0_SCA_datasets_exploration.ipynb`: Introduction to Side Channel Attacks, non-ML techniques, motivation for ML based approach and datasets exploration.
+* `0_0_SCA_datasets_exploration.ipynb`: Introduction to Side Channel Attacks, non-ML techniques, motivation for ML based approach and datasets exploration.
 
-`0_1_DPA.ipynb` : Differential Power Analysis technique for extracting secrets from hardware.
+* `0_1_DPA.ipynb` : Differential Power Analysis technique for extracting secrets from hardware.
 
-`0_2_CPA.ipynb` : Correlation Power Analysis tecnhique for extracting secrets form hardware.
+* `0_2_CPA.ipynb` : Correlation Power Analysis tecnhique for extracting secrets form hardware.
 
-`1_0_SCA_MLP.ipynb` : Multilayer perceptrons for side channel attacks.
+* `1_0_SCA_MLP.ipynb` : Multilayer perceptrons for side channel attacks.
 
-`1_1_SCA_CNN.ipynb` : Convolutional neural networks for side channel attacks.
+* `1_1_SCA_CNN.ipynb` : Convolutional neural networks for side channel attacks.
 
-`1_2_SCA_RNN.ipynb` : Recurrent neural networks for side channel attacks.
+* `1_2_SCA_RNN.ipynb` : Recurrent neural networks for side channel attacks.
 
-`2_0_SCA_Model_Comparations.ipynb` : Compare efficency of different types of Machine learning approaches for SCA
+* `2_0_SCA_Model_Comparations.ipynb` : Compare efficency of different types of Machine learning approaches for SCA
 
-`3_0_Attack_Simulation.ipynb` : Use trained models to recover full keys.
+* `3_0_Attack_Simulation.ipynb` : Use trained models to recover full keys.
+
+And utility python scripts used in notebooks:
+
+* `AES.py` : Implement basic AES operations.
+
+* `data_preparation.py` : Create and retrieve datasets.
+
+* `training.py` : Training and evaluation helper functions.
 
 ## How to run:
 
