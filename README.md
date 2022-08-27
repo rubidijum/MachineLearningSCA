@@ -1,6 +1,38 @@
 # MachineLearningSCA
 Machine learning faculty course project. Using machine learning techniques for Side Channel Analysis.
 
+## How to run:
+
+In order to run code in this repository, python <version> and tensorflow <version> are needed.
+You can use anaconda virtual environment manager to create virtual environment with all of the required packages and execute the code as normal jupyter notebook:
+
+* Download Anaconda from [here](https://docs.conda.io/en/latest/miniconda.html) and install it.
+
+* Start Anaconda prompt on Windows or just open a terminal on Linux.
+
+* Create conda environment:
+
+    `conda create -n env_name --file ml-sca.yaml`
+
+* Activate newly created environment
+
+    `conda activate env_name`
+    
+* Start jupyter notebook from repository root directory
+
+    `cd <repository-path>`
+    
+    `jupyter notebook`
+
+Datasets and pretrained models can be downloaded from:
+
+1) [SCAAML datasets](https://storage.googleapis.com/scaaml-public/scaaml_intro/datasets.zip)
+2) [SCAAML models](https://storage.googleapis.com/scaaml-public/scaaml_intro/models.zip)
+3) [Trained models]()
+4) [Logs]()
+
+NOTE: make sure to extract datasets to `data/` folder.
+
 ## References:
 
 * [Study of Deep Learning Techniques for
