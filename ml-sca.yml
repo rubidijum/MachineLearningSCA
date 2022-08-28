@@ -1,0 +1,18 @@
+name: ML-SCA
+channels:
+  - defaults
+  - conda-forge
+  - pypi
+dependencies:
+  - tensorflow
+  - tqdm
+  - keras
+  - keras-tuner
+  - python==3.9
+  - matplotlib
+  - jupyter
+  - pydot
+  - pyserial
+  - seaborn
+  - ipympl
+prefix: C:\Users\avra\Miniconda3\envs\ML-SCA
