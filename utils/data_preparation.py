@@ -73,35 +73,60 @@ class SCAML_Dataset():
         else:
             self.profiling_dataset = self.ProfilingDataset(X, y)
 
-    def get_dataset(self, key_index, attack_byte, num_traces=256, trace_length=DEFAULT_TRACE_LENGTH, training=True):
-        """! Get dataset of network inputs and outputs for specific attack point
+    def get_attack_dataset(self, shard_index, attack_byte, num_traces=256, trace_length=DEFAULT_TRACE_LENGTH):
+        """! Get subset of the attack dataset based on shard index. Note that all keys in one shard are the same.
 
-        @key_index Index of the key to attack within the dataset
+
+                attack_byte
+                      |
+                ______|_________________
+                |     |
+                |     |
+                |     |
+                .     |
+                .     V
+                .     _
+   shard_index->|    | |            }
+                |    | |            } num_traces
+                |    |_|            }
+                .
+                .
+                .
+
+        @param shard_index Which shard within dataset is being attacked
+        @param attack_byte Which byte within the key is being attacked.
+        Note that this should match on which key byte the model was trained.
+        @param num_traces Number of traces to attack in each shard
+        @param trace_length Number of datapoints in each trace (resolution)
         """
-
         NUM_TRACES_PER_KEY = 256
-        start_idx = key_index * NUM_TRACES_PER_KEY
+        start_idx = shard_index * NUM_TRACES_PER_KEY
         end_idx = start_idx + num_traces
 
+        y = self.attack_dataset.y[attack_byte]
+        y = keras.utils.np_utils.to_categorical(y, num_classes=256, dtype='uint8')
+        y = y[start_idx:end_idx,:]
 
-        if training:
-            # Shuffle during training only => helps convergence
-            X = self.profiling_dataset.X
-            y = keras.utils.np_utils.to_categorical(self.profiling_dataset.y[attack_byte], num_classes=256, dtype='uint8')
-            indices = tf.range(start=0, limit=tf.shape(X)[0], dtype=tf.int32)
-            shuffled_indices = tf.random.shuffle(indices)
+        X = self.attack_dataset.X[start_idx:end_idx,:trace_length,:]
+        return self.AttackDataset(X, y, self.attack_dataset.keys[:, start_idx:end_idx], self.attack_dataset.plaintexts[:, start_idx:end_idx])
 
-            X = tf.gather(X, shuffled_indices)
-            y = tf.gather(y, shuffled_indices)
+    def get_profiling_dataset(self, attack_byte, trace_length=DEFAULT_TRACE_LENGTH):
+        """! Get dataset of network inputs and outputs for specific attack point
 
-            return self.ProfilingDataset(X[start_idx:end_idx,:trace_length,:], y[:,start_idx:end_idx])
-        else:
-            y = self.attack_dataset.y[attack_byte]
-            y = keras.utils.np_utils.to_categorical(y, num_classes=256, dtype='uint8')
-            y = y[start_idx:end_idx,:]
+        @param attack_byte Key byte on which profiling is performed
+        @param trace_length Number of datapoints in each trace (resolution)
+        """
 
-            X = self.attack_dataset.X[start_idx:end_idx,:trace_length,:]
-            return self.AttackDataset(X, y, self.attack_dataset.keys[:, start_idx:end_idx], self.attack_dataset.plaintexts[:, start_idx:end_idx])
+        # Shuffle during training helps model convergence
+        X = self.profiling_dataset.X
+        y = keras.utils.np_utils.to_categorical(self.profiling_dataset.y[attack_byte], num_classes=256, dtype='uint8')
+        indices = tf.range(start=0, limit=tf.shape(X)[0], dtype=tf.int32)
+        shuffled_indices = tf.random.shuffle(indices)
+
+        X = tf.gather(X, shuffled_indices)
+        y = tf.gather(y, shuffled_indices)
+
+        return self.ProfilingDataset(X[:,:trace_length,:], y)
 
 class ASCAD_Dataset():
 
@@ -122,7 +147,7 @@ class ASCAD_Dataset():
         self.profiling_data = self.h5File.get('Profiling_traces')
         self.attack_data = self.h5File.get('Attack_traces')
 
-    def create_data(self, training, num_traces=None, trace_length=DEFAULT_TRACE_LEN, return_metadata=True ):
+    def get_profiling_dataset(self, training, num_traces=None, trace_length=DEFAULT_TRACE_LEN, return_metadata=True ):
         
         traces = self.profiling_data.get('traces') if training else self.attack_data.get('traces')
         labels = self.profiling_data.get('labels') if training else self.attack_data.get('labels')
