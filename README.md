@@ -17,7 +17,7 @@ Code is divided between a couple of jupyter notebooks:
 
 * `1_2_SCA_RNN.ipynb` : Recurrent neural networks for side channel attacks.
 
-* `2_0_SCA_Model_Comparations.ipynb` : Compare efficency of different types of Machine learning approaches for SCA
+* `2_0_SCA_Model_Comparations.ipynb` : Conclusions
 
 
 And utility python scripts used in notebooks:
