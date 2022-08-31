@@ -19,7 +19,6 @@ Code is divided between a couple of jupyter notebooks:
 
 * `2_0_SCA_Model_Comparations.ipynb` : Compare efficency of different types of Machine learning approaches for SCA
 
-* `3_0_Attack_Simulation.ipynb` : Use trained models to recover full keys.
 
 And utility python scripts used in notebooks:
 
@@ -61,8 +60,9 @@ Datasets and pretrained models can be downloaded from:
 1) [SCAAML datasets](https://storage.googleapis.com/scaaml-public/scaaml_intro/datasets.zip) - Publicly available dataset of power traces.
 2) [SCAAML models](https://storage.googleapis.com/scaaml-public/scaaml_intro/models.zip) - 
 3) [ASCAD database - fixed key](https://www.data.gouv.fr/s/resources/ascad/20180530-163000/ASCAD_data.zip) - Data used in ASCAD paper.
-4) [Trained models]()
-5) [Training logs]()
+4) [Trained CNN models](https://drive.google.com/file/d/1F1Ju0JOqwYjhIOejbE9-5SuhUwVdLkXV/view?usp=sharing)
+5) [Trained MLP models](https://drive.google.com/file/d/11nqK43Gc1Rj7C3eHS_hiTtDB4xndE8BY/view?usp=sharing)
+6) [Training logs]()
 
 NOTE: make sure to extract datasets to `data/` folder, models to `models/` folder and logs to `logs/` folder.
 
