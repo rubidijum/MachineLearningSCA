@@ -130,7 +130,7 @@ class SCA_Trainer():
         @param attack_byte Key byte index to attack (0 - 15)
         @param traces_per_chunk Number of traces in each attack chunk. All the data in one attack chunk is regarding the same key.
         @param keys_to_attack Number of different keys to attack. Equivalent to number of shards to attack.
-        @param verbose Print extra information during evaluation if 1. 1 by default 
+        @param verbose Print extra information during evaluation if 1. 1 by default
         """
 
         # reset calculated metrics for each new evaluation run
@@ -145,7 +145,7 @@ class SCA_Trainer():
                     key_index, attack_byte, num_traces=traces_per_chunk)
                 X_attack, y_attack, keys, plaintexts = attack_dataset.X, attack_dataset.y, attack_dataset.keys, attack_dataset.plaintexts
 
-                true_key_byte = keys[0][0]
+                true_key_byte = keys[attack_byte][0]
 
                 predictions = model.predict(X_attack, verbose=verbose)
 
@@ -309,7 +309,7 @@ class SCA_Trainer():
                 recovered_key.append(rankings[0])
 
                 pbar.set_description(
-                    f"True key: {true_key}, predicted: {recovered_key}")
+                    f"True key: {true_key}\npredicted: {recovered_key}")
                 pbar.update()
 
         return recovered_key
