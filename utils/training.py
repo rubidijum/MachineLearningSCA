@@ -125,10 +125,12 @@ class SCA_Trainer():
         This is equivalent to attacking single key byte (of possibly many different keys).
         Accuracy and key rank metrics are calculated during evaluation.
 
-        @keys Matrix of keys
-        @plaintexts Matrix of plaintexts
-        @key_byte Key byte index to attack (0, 255)
-        @param keys_per_chunk Number of traces in each attack chunk. All the data in one attack chunk is regarding the same key.
+        @param model Trained Keras model object to evaluate
+        @param dataset Dataset on which to perform evaluation
+        @param attack_byte Key byte index to attack (0 - 15)
+        @param traces_per_chunk Number of traces in each attack chunk. All the data in one attack chunk is regarding the same key.
+        @param keys_to_attack Number of different keys to attack. Equivalent to number of shards to attack.
+        @param verbose Print extra information during evaluation if 1. 1 by default 
         """
 
         # reset calculated metrics for each new evaluation run
@@ -309,3 +311,39 @@ class SCA_Trainer():
                 pbar.set_description(
                     f"True key: {true_key}, predicted: {recovered_key}")
                 pbar.update()
+
+        return recovered_key
+
+    def evaluate_attack(self, models, dataset, keys_to_atack, max_traces=15):
+        """ Perform multiple attacks using trained models and calculate 
+        global metrics.
+        """
+        trials = 0
+        correct_guesses = dict.fromkeys(list(range(1, max_traces)), 0)
+
+        for key_index in range(keys_to_atack):
+            for trace_no in range(1, max_traces):
+                key_guess = self.attack_full_key(
+                    models, None, dataset, key_index, traces_per_chunk=trace_no, verbose=0)
+                correct_key = dataset.get_correct_key(key_index)
+                if key_guess == correct_key:
+                    if trace_no in correct_guesses.keys():
+                        correct_guesses[trace_no] += 1
+                    else:
+                        correct_guesses[trace_no] = 1
+
+        _m = {key: value for (key, value)
+              in correct_guesses.items() if value > 0}
+        if (len(_m) > 0):
+            # Minimum number of traces that broke at least one key
+            min_traces = min(correct_guesses)
+            print(f"Min traces {min_traces}")
+            print(f"Keys recovered: {_m[min_traces]/keys_to_atack} %")
+
+            # Maximum number of traces that broke at least one key
+            max_traces = max(correct_guesses)
+            print(f"Max traces {min_traces}")
+            print(f"Keys recovered: {_m[max_traces]/keys_to_atack} %")
+        else:
+            print(
+                f"Model failed to recover any keys using 0-{max_traces} traces.")
