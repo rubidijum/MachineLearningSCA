@@ -19,7 +19,6 @@ Code is divided between a couple of jupyter notebooks:
 
 * `2_0_SCA_Model_Comparations.ipynb` : Compare efficency of different types of Machine learning approaches for SCA
 
-* `3_0_Attack_Simulation.ipynb` : Use trained models to recover full keys.
 
 And utility python scripts used in notebooks:
 
