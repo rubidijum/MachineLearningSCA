@@ -57,9 +57,7 @@ class SCA_Trainer():
         if callbacks_list is None:
             callbacks_list = [
                 tf.keras.callbacks.EarlyStopping(
-                    monitor='val_loss', patience=4),
-                tf.keras.callbacks.EarlyStopping(
-                    monitor='accuracy', patience=5, baseline=0.0039),
+                    monitor='val_loss', patience=4, verbose=1),
                 tf.keras.callbacks.TensorBoard(
                     log_dir=_log_dir, histogram_freq=1),
                 tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_filepath,
