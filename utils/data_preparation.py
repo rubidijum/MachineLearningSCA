@@ -141,7 +141,7 @@ class SCAML_Dataset():
         NUM_TRACES_PER_KEY = 256
         start_idx = key_index * NUM_TRACES_PER_KEY
 
-        self.attack_dataset.keys[:, start_idx]
+        return np.array(self.attack_dataset.keys[:, start_idx])
 
 
 class ASCAD_Dataset():
