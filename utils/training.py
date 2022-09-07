@@ -231,14 +231,14 @@ class SCA_Trainer():
         """! Plot key ranks of the evaluated model
         """
 
-        plt.figure(figsize=(10, 20))
+        plt.figure(figsize=(20, 20))
 
         for r in ranks:
             plt.plot(r)
 
         x_max = len(ranks[0]) if num_traces is None else num_traces
         x_labels = [str(x) for x in range(x_max)]
-        plt.xticks(np.arange(x_max), labels=x_labels)
+        plt.xticks(np.arange(x_max), labels=x_labels, rotation=90)
 
         y_max = np.max(np.asarray(ranks))
         y_labels = [str(y) for y in range(y_max)]
@@ -300,26 +300,28 @@ class SCA_Trainer():
                     key_index, attack_byte, num_traces=traces_per_chunk)
                 X_attack, _, _, plaintexts = attack_dataset.X, attack_dataset.y, attack_dataset.keys, attack_dataset.plaintexts
 
-                predictions = model.predict(X_attack, verbose=verbose)
+                predictions = model.predict(X_attack, verbose=0)
 
                 key_predicted_probabilities = self.get_key_probabilities(
                     predictions, plaintexts, attack_byte)
 
                 # Accumulate key predictions and classify
                 probs = np.zeros(256)
-                ranks = []
+                ranks_history = []
                 for i, p in enumerate(key_predicted_probabilities):
                     probs += p
                     rankings = np.argsort(probs)[::-1]
+                    ranks_history.append((i, rankings))
 
                 recovered_key.append(rankings[0])
 
                 pbar.set_description(
-                    f"True key: {true_key}\npredicted: {recovered_key}")
+                    f"True key: {true_key}\npredicted: {recovered_key}\ntraces used: {traces_per_chunk}")
                 pbar.update()
 
-        print(
-            f"Recovered {np.sum(np.asarray(true_key)==np.asarray(recovered_key))/len(true_key)*100}% of the key using {traces_per_chunk} traces")
+        if verbose == 1:
+            print(
+                f"Recovered {np.sum(np.asarray(true_key)==np.asarray(recovered_key))/len(true_key)*100}% of the key using {traces_per_chunk} traces")
         return np.array(recovered_key)
 
     def evaluate_attack(self, models, dataset, keys_to_atack, max_traces=15):
@@ -327,6 +329,7 @@ class SCA_Trainer():
         global metrics.
         """
         trials = 0
+        guesses = []
         correct_guesses = dict.fromkeys(list(range(1, max_traces+1)), 0)
 
         with tqdm(total=keys_to_atack, position=0, leave=True) as pbar:
@@ -334,17 +337,24 @@ class SCA_Trainer():
                 pbar.set_description(f"Attacking key in shard {key_index}")
                 for trace_no in range(1, max_traces+1):
                     key_guess = self.attack_full_key(
-                        models, None, dataset, key_index, traces_per_chunk=trace_no, verbose=0)
+                        models, None, dataset, key_index, traces_per_chunk=trace_no)
+                    guesses.append((trace_no, key_guess))
                     correct_key = dataset.get_correct_key(key_index)
                     if (key_guess == correct_key).all():
                         if trace_no in correct_guesses.keys():
                             correct_guesses[trace_no] += 1
                         else:
                             correct_guesses[trace_no] = 1
+                        # Stop attacking when correct key is guessed
+                        for t in range(trace_no+1, max_traces+1):
+                            correct_guesses[t] += 1
+                        break
                 pbar.update()
 
         _m = {key: value for (key, value)
               in correct_guesses.items() if value > 0}
+
+        print(_m)
 
         if (len(_m) > 0):
             # Minimum number of traces that broke at least one key
@@ -352,10 +362,14 @@ class SCA_Trainer():
             print(f"Min traces {min_traces}")
             print(f"Keys recovered: {(_m[min_traces]/keys_to_atack)*100} %")
 
-            # Maximum number of traces that broke at least one key
-            max_traces = max(_m.keys())
-            print(f"Max traces {max_traces}")
-            print(f"Keys recovered: {(_m[max_traces]/keys_to_atack)*100} %")
+            # Maximum number of traces that broke most keys
+            for key, val in _m.items():
+                if val == max(_m.values()):
+                    print(f"Max traces {key}")
+                    print(f"Keys recovered: {(_m[key]/keys_to_atack)*100} %")
+                    break
         else:
             print(
                 f"Model failed to recover any keys using [1-{max_traces}] traces.")
+
+        return guesses
