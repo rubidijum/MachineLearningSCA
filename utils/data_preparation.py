@@ -146,11 +146,24 @@ class SCAML_Dataset():
 
 class ASCAD_Dataset():
 
-    DEFAULT_TRACE_LEN = 700
+    DEFAULT_TRACE_LENGTH = 1400
+    ATTACK_CHUNK_SIZE = 2000
+
+    @dataclass
+    class ProfilingDataset:
+        X: tf.Tensor
+        y: tf.Tensor
+
+    @dataclass
+    class AttackDataset:
+        X:          tf.Tensor
+        y:          tf.Tensor
+        keys:       tf.Tensor
+        plaintexts: tf.Tensor
 
     def __init__(self) -> None:
 
-        self.ascad_path = "drive/MyDrive/ASCAD_data/ASCAD_databases/ASCAD.h5"
+        self.ascad_path = "./data/SCA_datasets/datasets/ASCAD/ASCAD.h5"
 
         self.h5File = None
         self.profiling_data = None
@@ -163,22 +176,34 @@ class ASCAD_Dataset():
         self.profiling_data = self.h5File.get('Profiling_traces')
         self.attack_data = self.h5File.get('Attack_traces')
 
-    def get_profiling_dataset(self, training, num_traces=None, trace_length=DEFAULT_TRACE_LEN, return_metadata=True):
+        print(self.profiling_data.get('traces'))
+        print(self.profiling_data.get('metadata'))
 
-        traces = self.profiling_data.get(
-            'traces') if training else self.attack_data.get('traces')
-        labels = self.profiling_data.get(
-            'labels') if training else self.attack_data.get('labels')
-        metadata = self.profiling_data.get(
-            'metadata') if training else self.attack_data.get('metadata')
+    def create_dataset(self, data_path, attack_point, num_shards=256, trace_length=DEFAULT_TRACE_LENGTH, attack=False):
+        with h5py.File(data_path, 'r') as h5f:
+            profiling_group = h5f.get('Profiling_traces')
+            attack_group = h5f.get('Attack_traces')
 
-        if num_traces is None:
-            num_traces = traces.shape[0]
+    def get_attack_dataset(self, shard_index, attack_byte=3, num_traces=ATTACK_CHUNK_SIZE, trace_length=DEFAULT_TRACE_LENGTH):
 
-        X = traces[:num_traces, :trace_length]
-        y = labels[:num_traces]
+        start_idx = shard_index * ATTACK_CHUNK_SIZE
+        end_idx = start_idx + num_traces
 
-        if return_metadata != True:
-            metadata = None
+        X = tf.expand_dims(self.attack_data['traces'][:, :trace_length], 1)
+        y = keras.utils.np_utils.to_categorical(
+            self.attack_data['labels'][:], num_classes=256, dtype='uint8')
 
-        return ((X, y), metadata)
+        keys = self.attack_data['']
+
+    def get_profiling_dataset(self, attack_byte=3, trace_length=DEFAULT_TRACE_LENGTH):
+
+        X = self.profiling_data['traces'][:, :trace_length]
+        X = tf.convert_to_tensor(X)
+        X = tf.expand_dims(X, -1)
+
+        y = self.profiling_data['labels'][:]
+        y = keras.utils.np_utils.to_categorical(
+            y, num_classes=256, dtype='uint8')
+        y = tf.convert_to_tensor(y)
+
+        return self.ProfilingDataset(X[:, :trace_length, :], y)
