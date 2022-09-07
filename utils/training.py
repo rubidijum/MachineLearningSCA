@@ -29,6 +29,8 @@ class SCA_Trainer():
 
         self.training_history = None
 
+        self.area_under_curve = 0.0
+
     def train_model(self, model, dataset, attack_byte, batch_size, epochs, validation_split=0.0, validation_data=None, callbacks_list=None, tag='', save_dir='', verbose=1):
         """! Model training wrapper function.
 
@@ -181,6 +183,12 @@ class SCA_Trainer():
             self.stats_per_trace[num_traces] = (
                 _num_correct, (_num_correct/keys_to_attack)*100)
 
+        # Scale to 0-1 and integrate to get area under curve
+        scaled_y = np.array([x[1] for x in self.stats_per_trace.values()])/100
+        step = 1/len(self.stats_per_trace.values())
+        scaled_x = np.arange(0, 1, step)
+        self.area_under_curve = np.trapz(scaled_y, scaled_x)
+
         self.plot_key_ranks(self.key_ranks)
         self.plot_confusion_matrix()
 
@@ -261,12 +269,7 @@ class SCA_Trainer():
         print(
             f"Maximum key recovery success of {max_accuracy} achieved with {min_traces} traces")
 
-        # Scale to 0-1 and integrate to get area under curve
-        scaled_y = np.array([x[1] for x in self.stats_per_trace.values()])/100
-        step = 1/len(self.stats_per_trace.values())
-        scaled_x = np.arange(0, 1, step)
-        area = np.trapz(scaled_y, scaled_x)
-        print(f"Area under curve score: {area}")
+        print(f"Area under curve score: {self.area_under_curve}")
 
         plt.xlabel('Number of traces')
         plt.ylabel('%% of the successful key byte guesses')
@@ -351,7 +354,7 @@ class SCA_Trainer():
 
             # Maximum number of traces that broke at least one key
             max_traces = max(_m.keys())
-            print(f"Max traces {min_traces}")
+            print(f"Max traces {max_traces}")
             print(f"Keys recovered: {(_m[max_traces]/keys_to_atack)*100} %")
         else:
             print(
