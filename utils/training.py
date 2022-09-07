@@ -31,6 +31,8 @@ class SCA_Trainer():
 
         self.area_under_curve = 0.0
 
+        self.ranks_history = dict.fromkeys(list(range(0, 16)), [])
+
     def train_model(self, model, dataset, attack_byte, batch_size, epochs, validation_split=0.0, validation_data=None, callbacks_list=None, tag='', save_dir='', verbose=1):
         """! Model training wrapper function.
 
@@ -292,6 +294,9 @@ class SCA_Trainer():
         true_key = dataset.get_correct_key(key_index)
         assert (len(models) == len(true_key))
 
+        # Reset ranks history
+        self.ranks_history = dict.fromkeys(list(range(0, 16)), [])
+
         recovered_key = []
 
         with tqdm(total=16, position=1, leave=False) as pbar:
@@ -307,11 +312,13 @@ class SCA_Trainer():
 
                 # Accumulate key predictions and classify
                 probs = np.zeros(256)
-                ranks_history = []
+                ranks = []
                 for i, p in enumerate(key_predicted_probabilities):
                     probs += p
                     rankings = np.argsort(probs)[::-1]
-                    ranks_history.append((i, rankings))
+                    ranks.append((i, rankings))
+
+                self.ranks_history[attack_byte] = ranks
 
                 recovered_key.append(rankings[0])
 
@@ -353,8 +360,6 @@ class SCA_Trainer():
 
         _m = {key: value for (key, value)
               in correct_guesses.items() if value > 0}
-
-        print(_m)
 
         if (len(_m) > 0):
             # Minimum number of traces that broke at least one key
