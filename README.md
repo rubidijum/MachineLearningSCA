@@ -65,7 +65,8 @@ Datasets and pretrained models can be downloaded from:
 6) Training logs: [MLP](https://drive.google.com/file/d/1MBjH5ChTuFMZqtUB0Ep8hzKkc8AfMKMG/view?usp=sharing) / [MLP v2](https://drive.google.com/file/d/1zwGxjPSSecVEGTzWKA3Mq3nh9VbygTDL/view?usp=sharing) / [CNN](https://drive.google.com/file/d/1yjopZDvr9RLPdVC11ZBnRNumEBshNUGl/view?usp=sharing) / [CNN v2](https://drive.google.com/file/d/1V5udILYhUlZ0ptuTB67i0NfdS0IRazlu/view?usp=sharing)
 7) [Hyperparameter tuning logs](https://mega.nz/file/iKRSkCZS#8tEcd60-DKmqPfbeLEQp6vRlsuPNf1wVp8o5Jc-Xnhw) ~15GB
 
-NOTE: make sure to extract datasets to `data/` folder, models to `models/` folder and logs to `logs/` folder.
+NOTE: Trained models and logs with `v2` suffix should be used
+NOTE: Make sure to extract datasets to `data/` folder, models to `models/` folder and logs to `logs/` folder. 
 
 ## References:
 
