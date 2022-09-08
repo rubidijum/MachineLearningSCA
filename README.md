@@ -63,7 +63,7 @@ Datasets and pretrained models can be downloaded from:
 4) [Trained CNN models](https://drive.google.com/file/d/1F1Ju0JOqwYjhIOejbE9-5SuhUwVdLkXV/view?usp=sharing) / [Trained CNN models v2](https://drive.google.com/file/d/1VpYskTj2vuEPUXbhwtuDbGhKtafVAELz/view?usp=sharing)
 5) [Trained MLP models](https://drive.google.com/file/d/11nqK43Gc1Rj7C3eHS_hiTtDB4xndE8BY/view?usp=sharing) / [Trained MLP models v2](https://drive.google.com/file/d/1m5j2wcQqguRF8GyDPRpcsd2i_M-Q-owt/view?usp=sharing)
 6) Training logs: [MLP](https://drive.google.com/file/d/1MBjH5ChTuFMZqtUB0Ep8hzKkc8AfMKMG/view?usp=sharing) / [MLP v2](https://drive.google.com/file/d/1zwGxjPSSecVEGTzWKA3Mq3nh9VbygTDL/view?usp=sharing) / [CNN](https://drive.google.com/file/d/1yjopZDvr9RLPdVC11ZBnRNumEBshNUGl/view?usp=sharing) / [CNN v2](https://drive.google.com/file/d/1V5udILYhUlZ0ptuTB67i0NfdS0IRazlu/view?usp=sharing)
-7) Hyperparameter tuning logs are too large to upload (~18GB)
+7) [Hyperparameter tuning logs](https://mega.nz/file/iKRSkCZS#8tEcd60-DKmqPfbeLEQp6vRlsuPNf1wVp8o5Jc-Xnhw) ~15GB
 
 NOTE: make sure to extract datasets to `data/` folder, models to `models/` folder and logs to `logs/` folder.
 
